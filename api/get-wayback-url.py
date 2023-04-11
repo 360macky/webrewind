@@ -44,7 +44,7 @@ class handler(BaseHTTPRequestHandler):
       wayback_url = data['archived_snapshots']['closest']['url']
 
     if wayback_url:
-      image_url = get_image_url(quote(wayback_url))
+      image_url = get_image_url(wayback_url)
       # image_data = image_response.json()
 
       # Extract the image_url
