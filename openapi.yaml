@@ -6,7 +6,7 @@ info:
 servers:
   - url: https://webrewind.vercel.app
 paths:
-  /get-wayback-url:
+  /api/get-wayback-url:
     get:
       operationId: getWaybackUrl
       summary: Get image url of a website looking back in time.
