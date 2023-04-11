@@ -13,10 +13,10 @@ class handler(BaseHTTPRequestHandler):
     # Request APIFlash to get the URL of the image captured
     api_url = "https://api.apiflash.com/v1/urltoimage"
     access_key = os.environ.get("FLASHAPI_ACCESS_KEY", "")
-    encoded_url = quote(url)
+    # encoded_url = quote(url)
     params = {
         "access_key": access_key,
-        "url": encoded_url,
+        "url": url,
         "format": "jpeg",
         "response_type": "json",
         "css": "div#wm-ipp-base{opacity:0}"
