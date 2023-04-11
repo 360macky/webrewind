@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: WebRewind
-  description: A plugin for getting the image of a website at a specific time.
+  description: A plugin for getting the image of a website at a time.
   version: 'v1'
 servers:
   - url: https://webrewinder.vercel.app
@@ -9,20 +9,20 @@ paths:
   /get-wayback-url:
     get:
       operationId: getWaybackUrl
-      summary: Get Wayback site URL
+      summary: Get image url of a website looking back in time.
       parameters:
         - in: query
           name: url
           schema:
             type: string
           required: true
-          description: The URL to retrieve the Wayback Machine archive for.
+          description: The URL of the website.
         - in: query
           name: timestamp
           schema:
             type: string
           required: true
-          description: The timestamp for the desired snapshot in Wayback Machine.
+          description: The timestamp of the snapshot in YYYYMMDDHHMMSS format.
       responses:
         "200":
           description: OK
@@ -30,37 +30,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/getWaybackUrlResponse'
-  /get-image-url:
-    get:
-      operationId: getImageUrl
-      summary: Get image URL
-      parameters:
-        - in: query
-          name: url
-          schema:
-            type: string
-          required: true
-          description: The URL to retrieve the image from.
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/getImageUrlResponse'
 
 components:
   schemas:
     getWaybackUrlResponse:
-      type: object
-      properties:
-        wayback_timestamp:
-          type: string
-          description: The timestamp of the Wayback Machine snapshot.
-        wayback_url:
-          type: string
-          description: The URL of the Wayback Machine snapshot.
-    getImageUrlResponse:
       type: object
       properties:
         image_url:
