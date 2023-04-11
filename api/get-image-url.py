@@ -2,7 +2,8 @@ import json
 import os
 import requests
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, urlparse
+import secrets
 
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
@@ -19,7 +20,11 @@ class handler(BaseHTTPRequestHandler):
         "url": url,
         "format": "jpeg",
         "response_type": "json",
-        "css": "div#wm-ipp-base{opacity:0}"
+        "css": "div#wm-ipp-base{opacity:0}",
+        "s3_access_key_id": os.environ.get("S3_ACCESS_KEY_ID", ""),
+        "s3_secret_key": os.environ.get("S3_SECRET_ACCESS_KEY", ""),
+        "s3_bucket": "webrewind",
+        "s3_key": secrets.token_hex(5),
     }
 
     response = requests.get(api_url, params=params)
