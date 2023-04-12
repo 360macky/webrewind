@@ -3,25 +3,44 @@ import os
 import requests
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, quote, urlparse
+import secrets
+import random
 
+def get_image_id():
+  unique_id = "".join([str(random.randint(0, 9)) for _ in range(12)])
+  return unique_id
+
+def generate_unique_image_path(unique_id):
+  file_path = os.path.join("images", f"{unique_id}.jpg")
+  return file_path
+
+def format_s3_url(image_path):
+  s3_base_url = "https://webrewind.s3.sa-east-1.amazonaws.com/"
+  full_url = f"{s3_base_url}{image_path}"
+  return full_url
 
 def get_image_url(url):
   # Request APIFlash to get the URL of the image captured
   api_url = "https://api.apiflash.com/v1/urltoimage"
+  image_id = get_image_id()
   access_key = os.environ.get("FLASHAPI_ACCESS_KEY", "")
+  image_path = generate_unique_image_path(image_id)
   params = {
       "access_key": access_key,
       "url": url,
       "format": "jpeg",
       "response_type": "json",
-      "css": "div#wm-ipp-base{opacity:0}"
+      "css": "div#wm-ipp-base{opacity:0}",
+      "s3_access_key_id": os.environ.get("S3_ACCESS_KEY_ID", ""),
+      "s3_secret_key": os.environ.get("S3_SECRET_ACCESS_KEY", ""),
+      "s3_bucket": "webrewind",
+      "s3_key": image_path
   }
 
   response = requests.get(api_url, params=params)
   data = response.json()
 
-  # Extract the image_url
-  image_url = data.get("url", "")
+  image_url = format_s3_url(image_path)
 
   return image_url
 
