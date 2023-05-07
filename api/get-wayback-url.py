@@ -5,6 +5,10 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, quote, urlparse
 import random
 import openai
+from ratelimiter import RateLimiter
+
+# Define the rate limit (e.g., 10 requests per minute)
+rate_limiter = RateLimiter(max_calls=10, period=60)
 
 def get_image_id():
   unique_id = "".join([str(random.randint(0, 9)) for _ in range(12)])
@@ -51,39 +55,41 @@ def moderate_text(text):
 
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
-    # Parse the query parameters
-    query_params = parse_qs(urlparse(self.path).query)
-    url = query_params.get('url', [''])[0]
-    timestamp = query_params.get('timestamp', [''])[0]
+    # Apply rate limiting
+    with rate_limiter:
+      # Parse the query parameters
+      query_params = parse_qs(urlparse(self.path).query)
+      url = query_params.get('url', [''])[0]
+      timestamp = query_params.get('timestamp', [''])[0]
 
-    # Check if the URL content violates OpenAI's usage policies using the Moderation API
-    if moderate_text(url):
-      self.send_response(400)
+      # Check if the URL content violates OpenAI's usage policies using the Moderation API
+      if moderate_text(url):
+        self.send_response(400)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        error_json = json.dumps({"error": "URL content violates OpenAI's usage policies."})
+        self.wfile.write(bytes(error_json, "utf8"))
+        return
+
+      # Call the Wayback Machine API
+      api_url = f'https://archive.org/wayback/available?url={url}&timestamp={timestamp}'
+      response = requests.get(api_url)
+      data = response.json()
+
+      # Extract the wayback_url
+      wayback_url = ''
+      if 'archived_snapshots' in data and 'closest' in data['archived_snapshots']:
+        wayback_url = data['archived_snapshots']['closest']['url']
+
+      if wayback_url:
+        image_url = get_image_url(wayback_url)
+      else:
+        image_url = ""
+
+      # Send the response
+      self.send_response(200)
       self.send_header('Content-type', 'application/json')
       self.end_headers()
-      error_json = json.dumps({"error": "URL content violates OpenAI's usage policies."})
-      self.wfile.write(bytes(error_json, "utf8"))
+      response_json = json.dumps({"image_url": image_url})
+      self.wfile.write(bytes(response_json, "utf8"))
       return
-
-    # Call the Wayback Machine API
-    api_url = f'https://archive.org/wayback/available?url={url}&timestamp={timestamp}'
-    response = requests.get(api_url)
-    data = response.json()
-
-    # Extract the wayback_url
-    wayback_url = ''
-    if 'archived_snapshots' in data and 'closest' in data['archived_snapshots']:
-      wayback_url = data['archived_snapshots']['closest']['url']
-
-    if wayback_url:
-      image_url = get_image_url(wayback_url)
-    else:
-      image_url = ""
-
-    # Send the response
-    self.send_response(200)
-    self.send_header('Content-type', 'application/json')
-    self.end_headers()
-    response_json = json.dumps({"image_url": image_url})
-    self.wfile.write(bytes(response_json, "utf8"))
-    return
