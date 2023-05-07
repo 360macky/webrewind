@@ -3,8 +3,8 @@ import os
 import requests
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, quote, urlparse
-import secrets
 import random
+import openai
 
 def get_image_id():
   unique_id = "".join([str(random.randint(0, 9)) for _ in range(12)])
@@ -44,6 +44,10 @@ def get_image_url(url):
 
   return image_url
 
+def moderate_text(text):
+    response = openai.Moderation.create(input=text)
+    result = response["results"][0]
+    return result["flagged"]
 
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
@@ -51,6 +55,15 @@ class handler(BaseHTTPRequestHandler):
     query_params = parse_qs(urlparse(self.path).query)
     url = query_params.get('url', [''])[0]
     timestamp = query_params.get('timestamp', [''])[0]
+
+    # Check if the URL content violates OpenAI's usage policies using the Moderation API
+    if moderate_text(url):
+      self.send_response(400)
+      self.send_header('Content-type', 'application/json')
+      self.end_headers()
+      error_json = json.dumps({"error": "URL content violates OpenAI's usage policies."})
+      self.wfile.write(bytes(error_json, "utf8"))
+      return
 
     # Call the Wayback Machine API
     api_url = f'https://archive.org/wayback/available?url={url}&timestamp={timestamp}'
@@ -64,10 +77,6 @@ class handler(BaseHTTPRequestHandler):
 
     if wayback_url:
       image_url = get_image_url(wayback_url)
-      # image_data = image_response.json()
-
-      # Extract the image_url
-      # image_url = image_data.get("image_url", "")
     else:
       image_url = ""
 
