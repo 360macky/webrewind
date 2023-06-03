@@ -7,7 +7,6 @@ import random
 import openai
 from ratelimiter import RateLimiter
 
-# Set the OpenAI API key
 openai.api_key = os.environ.get("OPENAI_API_KEY", "")
 
 # Define the rate limit (e.g., 10 requests per minute)
@@ -52,11 +51,17 @@ def get_image_url(url):
   return image_url
 
 def moderate_text(text):
-    response = openai.Moderation.create(input=text)
-    result = response["results"][0]
-    return result["flagged"]
+  """
+  Check if the text violates OpenAI's usage policies using the Moderation API.
+  """
+  response = openai.Moderation.create(input=text)
+  result = response["results"][0]
+  return result["flagged"]
 
 class handler(BaseHTTPRequestHandler):
+  """
+  Handle the GET request to the API.
+  """
   def do_GET(self):
     # Apply rate limiting
     with rate_limiter:
@@ -66,7 +71,7 @@ class handler(BaseHTTPRequestHandler):
       timestamp = query_params.get('timestamp', [''])[0]
 
       # Check if the URL content violates OpenAI's usage policies using the Moderation API
-      if False:
+      if moderate_text(url):
         self.send_response(400)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
