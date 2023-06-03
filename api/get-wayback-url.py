@@ -7,6 +7,9 @@ import random
 import openai
 from ratelimiter import RateLimiter
 
+# Set the OpenAI API key
+openai.api_key = os.environ.get("OPENAI_API_KEY", "")
+
 # Define the rate limit (e.g., 10 requests per minute)
 rate_limiter = RateLimiter(max_calls=10, period=60)
 
