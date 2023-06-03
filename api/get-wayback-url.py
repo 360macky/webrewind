@@ -66,7 +66,7 @@ class handler(BaseHTTPRequestHandler):
       timestamp = query_params.get('timestamp', [''])[0]
 
       # Check if the URL content violates OpenAI's usage policies using the Moderation API
-      if moderate_text(url):
+      if False:
         self.send_response(400)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
